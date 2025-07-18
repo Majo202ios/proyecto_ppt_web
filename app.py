@@ -1,12 +1,12 @@
+from flask import Flask, render_template
+from flask_socketio import SocketIO, emit, join_room
 import eventlet
-eventlet.monkey_patch()  # ¡SIEMPRE antes de importar cualquier otro módulo!
 
-from flask import Flask, render_template, request
-from flask_socketio import SocketIO, emit, join_room, leave_room
+eventlet.monkey_patch()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app)
 
 jugadores = {}  # username: {'room': 'sala1', 'jugada': None, 'puntos': 0, 'rondas': 0}
 salas = {}      # 'sala1': ['juan', 'maria']
@@ -39,7 +39,7 @@ def on_unirse(data):
         salas[room] = []
 
     if len(salas[room]) >= 2:
-        emit('mensaje', 'La sala está llena. Intenta más tarde.', room=request.sid)
+        emit('mensaje', 'La sala está llena. Intenta más tarde.')
         return
 
     salas[room].append(username)
@@ -55,7 +55,7 @@ def on_jugada(data):
     jugada = data.get('jugada')
 
     if username not in jugadores:
-        emit('mensaje', 'Debes unirte primero.', room=request.sid)
+        emit('mensaje', 'Debes unirte primero.')
         return
 
     room = jugadores[username]['room']
@@ -69,6 +69,7 @@ def on_jugada(data):
         j1, j2 = room_players
         resultado = ""
 
+        # Ronda sumada
         for p in room_players:
             jugadores[p]['rondas'] += 1
 
@@ -100,7 +101,6 @@ def on_salir(data):
         return
 
     room = jugadores[username]['room']
-    leave_room(room)
     if room in salas and username in salas[room]:
         salas[room].remove(username)
         if not salas[room]:
