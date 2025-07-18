@@ -1,105 +1,26 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <title>Piedra, Papel o Tijeras Online</title>
-    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js" integrity="sha384-..." crossorigin="anonymous"></script>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-        #game { display: none; }
-        button { margin: 5px; padding: 10px 20px; }
-        #mensajes { margin-top: 20px; height: 100px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;}
-    </style>
+  <meta charset="UTF-8">
+  <title>Piedra, Papel o Tijeras</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script defer src="/static/js/juego.js"></script>
 </head>
 <body>
+  <h1>Piedra, Papel o Tijeras</h1>
 
-    <h1>Piedra, Papel o Tijeras Online</h1>
+  <div id="login">
+    <input type="text" id="username" placeholder="Tu nombre">
+    <button onclick="unirse()">Unirse</button>
+  </div>
 
-    <div id="login">
-        <input id="username" placeholder="Ingresa tu nombre" />
-        <button id="btnUnirse">Unirse a sala</button>
-    </div>
-
-    <div id="game">
-        <p id="info"></p>
-        <button data-jugada="piedra">✊ Piedra</button>
-        <button data-jugada="papel">✋ Papel</button>
-        <button data-jugada="tijeras">✌️ Tijeras</button>
-        <br/>
-        <button id="btnSalir">Salir de sala</button>
-        <div id="mensajes"></div>
-        <div id="resultado"></div>
-        <div id="puntajes"></div>
-        <div id="rondas"></div>
-    </div>
-
-<script>
-    const socket = io();
-
-    const loginDiv = document.getElementById('login');
-    const gameDiv = document.getElementById('game');
-    const usernameInput = document.getElementById('username');
-    const btnUnirse = document.getElementById('btnUnirse');
-    const info = document.getElementById('info');
-    const mensajes = document.getElementById('mensajes');
-    const resultadoDiv = document.getElementById('resultado');
-    const puntajesDiv = document.getElementById('puntajes');
-    const rondasDiv = document.getElementById('rondas');
-    const btnSalir = document.getElementById('btnSalir');
-    const botonesJugada = [...document.querySelectorAll('button[data-jugada]')];
-
-    let username = '';
-
-    function agregarMensaje(msg) {
-        mensajes.innerHTML += `<div>${msg}</div>`;
-        mensajes.scrollTop = mensajes.scrollHeight;
-    }
-
-    btnUnirse.onclick = () => {
-        username = usernameInput.value.trim();
-        if(!username) {
-            alert("Por favor ingresa un nombre.");
-            return;
-        }
-        socket.emit('unirse', {username});
-    };
-
-    socket.on('mensaje', msg => {
-        agregarMensaje(msg);
-    });
-
-    socket.on('start', msg => {
-        loginDiv.style.display = 'none';
-        gameDiv.style.display = 'block';
-        info.textContent = msg;
-        resultadoDiv.textContent = '';
-        puntajesDiv.textContent = '';
-        rondasDiv.textContent = '';
-        agregarMensaje("¡Comienza el juego!");
-    });
-
-    botonesJugada.forEach(btn => {
-        btn.onclick = () => {
-            socket.emit('jugada', {username, jugada: btn.dataset.jugada});
-            agregarMensaje(`Elegiste ${btn.dataset.jugada}`);
-        };
-    });
-
-    socket.on('resultado', data => {
-        resultadoDiv.textContent = data.texto;
-        puntajesDiv.textContent = `Puntajes: ${JSON.stringify(data.puntos)}`;
-        rondasDiv.textContent = `Rondas jugadas: ${data.rondas}`;
-    });
-
-    btnSalir.onclick = () => {
-        socket.emit('salir', {username});
-        gameDiv.style.display = 'none';
-        loginDiv.style.display = 'block';
-        agregarMensaje("Saliste de la sala.");
-        usernameInput.value = '';
-    };
-
-</script>
-
+  <div id="juego" style="display:none;">
+    <p id="estado"></p>
+    <button onclick="enviarJugada('piedra')">🪨 Piedra</button>
+    <button onclick="enviarJugada('papel')">📄 Papel</button>
+    <button onclick="enviarJugada('tijeras')">✂️ Tijeras</button>
+    <button onclick="salir()">❌ Salir de sala</button>
+    <div id="resultado"></div>
+  </div>
 </body>
 </html>
