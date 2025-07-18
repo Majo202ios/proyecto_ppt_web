@@ -1,26 +1,110 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Piedra, Papel o Tijeras</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Piedra, Papel o Tijeras - Multiplayer</title>
+  
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  
+  <!-- Bootstrap Icons -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+    rel="stylesheet"
+  />
+  
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script defer src="/static/js/juego.js"></script>
 </head>
-<body>
-  <h1>Piedra, Papel o Tijeras</h1>
+<body class="bg-light d-flex flex-column min-vh-100">
 
-  <div id="login">
-    <input type="text" id="username" placeholder="Tu nombre">
-    <button onclick="unirse()">Unirse</button>
-  </div>
+  <nav class="navbar navbar-dark bg-primary mb-4">
+    <div class="container">
+      <span class="navbar-brand mb-0 h1">Piedra, Papel o Tijeras</span>
+    </div>
+  </nav>
 
-  <div id="juego" style="display:none;">
-    <p id="estado"></p>
-    <button onclick="enviarJugada('piedra')">🪨 Piedra</button>
-    <button onclick="enviarJugada('papel')">📄 Papel</button>
-    <button onclick="enviarJugada('tijeras')">✂️ Tijeras</button>
-    <button onclick="salir()">❌ Salir de sala</button>
-    <div id="resultado"></div>
-  </div>
+  <main class="container flex-grow-1">
+    <div id="login" class="text-center">
+      <h2 class="mb-3">Ingresa tu nombre para unirte</h2>
+      <div class="input-group mb-3 justify-content-center" style="max-width: 400px; margin: auto;">
+        <input
+          type="text"
+          id="username"
+          class="form-control"
+          placeholder="Tu nombre"
+          aria-label="Nombre de usuario"
+          aria-describedby="button-unirse"
+        />
+        <button
+          class="btn btn-primary"
+          id="button-unirse"
+          onclick="unirse()"
+          type="button"
+        >
+          <i class="bi bi-box-arrow-in-right"></i> Unirse
+        </button>
+      </div>
+    </div>
+
+    <div id="juego" class="d-none text-center">
+      <p id="estado" class="fs-5 fw-semibold"></p>
+
+      <div class="btn-group mb-3" role="group" aria-label="Opciones de jugada">
+        <button
+          class="btn btn-outline-primary"
+          onclick="enviarJugada('piedra')"
+          title="Piedra"
+          aria-label="Jugar Piedra"
+        >
+          <i class="bi bi-hand-rock-fill" style="font-size: 1.5rem;"></i>
+          <span class="d-none d-md-inline">Piedra</span>
+        </button>
+        <button
+          class="btn btn-outline-success"
+          onclick="enviarJugada('papel')"
+          title="Papel"
+          aria-label="Jugar Papel"
+        >
+          <i class="bi bi-hand-paper-fill" style="font-size: 1.5rem;"></i>
+          <span class="d-none d-md-inline">Papel</span>
+        </button>
+        <button
+          class="btn btn-outline-danger"
+          onclick="enviarJugada('tijeras')"
+          title="Tijeras"
+          aria-label="Jugar Tijeras"
+        >
+          <i class="bi bi-scissors" style="font-size: 1.5rem;"></i>
+          <span class="d-none d-md-inline">Tijeras</span>
+        </button>
+      </div>
+
+      <div class="mb-4">
+        <button
+          class="btn btn-outline-secondary"
+          onclick="salir()"
+          aria-label="Salir de la sala"
+        >
+          <i class="bi bi-door-open-fill"></i> Salir de la sala
+        </button>
+      </div>
+
+      <div id="resultado" class="alert alert-info" role="alert" style="min-height: 4rem;">
+        <!-- Aquí se mostrarán resultados -->
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-primary text-white text-center py-3 mt-auto">
+    &copy; 2025 Piedra, Papel o Tijeras - Tu Juego Multijugador
+  </footer>
+
+  <!-- Bootstrap JS Bundle (Popper + Bootstrap) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
