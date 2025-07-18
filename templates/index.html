@@ -1,98 +1,176 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Piedra, Papel o Tijeras</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Piedra, Papel o Tijeras - Multijugador</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f2f2f2; }
-        input, button { padding: 10px; margin: 5px; font-size: 16px; width: 80%; max-width: 300px; }
-        #botones button { width: 100px; font-size: 18px; margin: 10px; }
-        #juego { display: none; }
-        #salir { background: #e74c3c; color: white; border: none; }
-        @media (min-width: 600px) {
-            #botones button { width: 150px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #222;
+            color: #eee;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #status {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        button {
+            font-size: 20px;
+            margin: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 6px;
+            border: none;
+            background-color: #0b79d0;
+            color: white;
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        #resultado, #puntos, #rondas {
+            margin-top: 15px;
+            font-size: 1.2em;
+        }
+        #salirBtn {
+            margin-top: 20px;
+            background-color: #d03a3a;
+        }
+        input {
+            font-size: 18px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
     <h1>Piedra, Papel o Tijeras - Multijugador</h1>
 
-    <div id="login">
-        <input type="text" id="username" placeholder="Tu nombre">
-        <button onclick="unirse()">Unirse</button>
+    <div id="loginDiv">
+        <input type="text" id="usernameInput" placeholder="Tu nombre" />
+        <button id="btnUnirse">Unirse a la sala</button>
     </div>
 
-    <div id="juego">
-        <p id="mensaje">Esperando al otro jugador...</p>
-        <div id="botones">
-            <button onclick="jugar('piedra')" disabled id="btn-piedra">🪨</button>
-            <button onclick="jugar('papel')" disabled id="btn-papel">📄</button>
-            <button onclick="jugar('tijeras')" disabled id="btn-tijeras">✂️</button>
+    <div id="gameDiv" style="display:none;">
+        <div id="status">Esperando jugadores...</div>
+
+        <div>
+            <button onclick="jugar('piedra')" id="btnPiedra" disabled>Piedra</button>
+            <button onclick="jugar('papel')" id="btnPapel" disabled>Papel</button>
+            <button onclick="jugar('tijeras')" id="btnTijeras" disabled>Tijeras</button>
         </div>
-        <p id="resultado"></p>
-        <p id="rondas"></p>
-        <p id="puntajes"></p>
-        <button id="salir" onclick="salirSala()">Salir de sala</button>
+
+        <div id="resultado"></div>
+        <div id="puntos"></div>
+        <div id="rondas"></div>
+
+        <button id="salirBtn">Salir de la sala</button>
     </div>
 
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script>
-        const socket = io({ reconnection: true });
-        let usuario = '';
+        let socket;
+        let username = null;
+        let enSala = false;
 
-        function unirse() {
-            usuario = document.getElementById('username').value.trim();
-            if (!usuario) {
-                alert('Ingresa tu nombre');
+        const loginDiv = document.getElementById('loginDiv');
+        const gameDiv = document.getElementById('gameDiv');
+        const statusDiv = document.getElementById('status');
+        const resultadoDiv = document.getElementById('resultado');
+        const puntosDiv = document.getElementById('puntos');
+        const rondasDiv = document.getElementById('rondas');
+        const btnUnirse = document.getElementById('btnUnirse');
+        const usernameInput = document.getElementById('usernameInput');
+        const btnPiedra = document.getElementById('btnPiedra');
+        const btnPapel = document.getElementById('btnPapel');
+        const btnTijeras = document.getElementById('btnTijeras');
+        const salirBtn = document.getElementById('salirBtn');
+
+        // Cambia esta URL por la de tu servidor en Render o donde esté alojado
+        const SERVER_URL = 'https://ppt-multijugador.onrender.com';
+
+        btnUnirse.onclick = () => {
+            username = usernameInput.value.trim();
+            if (!username) {
+                alert('Por favor ingresa un nombre válido.');
                 return;
             }
-            socket.emit('unirse', { username: usuario });
-            document.getElementById('login').style.display = 'none';
-            document.getElementById('juego').style.display = 'block';
-        }
+            iniciarConexion();
+        };
 
-        function jugar(jugada) {
-            setBotones(false);
-            document.getElementById('mensaje').textContent = 'Esperando al otro jugador...';
-            socket.emit('jugada', { username: usuario, jugada: jugada });
-        }
+        salirBtn.onclick = () => {
+            if (!enSala) return;
+            socket.emit('salir', { username });
+            resetJuego();
+        };
 
-        function salirSala() {
-            socket.emit('salir', { username: usuario });
-            usuario = '';
-            setBotones(false);
-            document.getElementById('login').style.display = 'block';
-            document.getElementById('juego').style.display = 'none';
-            document.getElementById('username').value = '';
-            document.getElementById('mensaje').textContent = '';
-            document.getElementById('resultado').textContent = '';
-            document.getElementById('rondas').textContent = '';
-            document.getElementById('puntajes').textContent = '';
-        }
+        function iniciarConexion() {
+            socket = io(SERVER_URL);
 
-        function setBotones(activo) {
-            ['btn-piedra', 'btn-papel', 'btn-tijeras'].forEach(id => {
-                document.getElementById(id).disabled = !activo;
+            socket.on('connect', () => {
+                socket.emit('unirse', { username });
+                statusDiv.textContent = 'Conectando...';
             });
+
+            socket.on('mensaje', msg => {
+                statusDiv.textContent = msg;
+            });
+
+            socket.on('start', msg => {
+                statusDiv.textContent = msg;
+                habilitarBotones(true);
+                enSala = true;
+            });
+
+            socket.on('resultado', data => {
+                resultadoDiv.textContent = data.texto;
+                puntosDiv.textContent = 'Puntos: ' + JSON.stringify(data.puntos);
+                rondasDiv.textContent = 'Rondas jugadas: ' + data.rondas;
+                habilitarBotones(true);
+            });
+
+            socket.on('disconnect', () => {
+                statusDiv.textContent = 'Desconectado del servidor.';
+                habilitarBotones(false);
+                enSala = false;
+            });
+
+            loginDiv.style.display = 'none';
+            gameDiv.style.display = 'block';
         }
 
-        socket.on('mensaje', msg => {
-            document.getElementById('mensaje').textContent = msg;
-        });
+        function jugar(opcion) {
+            habilitarBotones(false);
+            resultadoDiv.textContent = 'Esperando al otro jugador...';
+            socket.emit('jugada', { username, jugada: opcion });
+        }
 
-        socket.on('start', msg => {
-            document.getElementById('mensaje').textContent = msg + ' Elige tu jugada.';
-            document.getElementById('resultado').textContent = '';
-            setBotones(true);
-        });
+        function habilitarBotones(activo) {
+            btnPiedra.disabled = !activo;
+            btnPapel.disabled = !activo;
+            btnTijeras.disabled = !activo;
+            salirBtn.disabled = !activo;
+        }
 
-        socket.on('resultado', data => {
-            document.getElementById('resultado').textContent = data.texto;
-            document.getElementById('rondas').textContent = `Ronda: ${data.rondas}`;
-            document.getElementById('puntajes').textContent = `Puntajes: ${Object.entries(data.puntos).map(([k,v]) => `${k}: ${v}`).join(' | ')}`;
-            setBotones(true);
-        });
+        function resetJuego() {
+            username = null;
+            enSala = false;
+            socket.disconnect();
+            loginDiv.style.display = 'block';
+            gameDiv.style.display = 'none';
+            resultadoDiv.textContent = '';
+            puntosDiv.textContent = '';
+            rondasDiv.textContent = '';
+            statusDiv.textContent = '';
+            usernameInput.value = '';
+            habilitarBotones(false);
+        }
     </script>
 </body>
 </html>
