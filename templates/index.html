@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Piedra, Papel o Tijeras</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f2f2f2; }
+        input, button { padding: 10px; margin: 5px; font-size: 16px; width: 80%; max-width: 300px; }
+        #botones button { width: 100px; font-size: 18px; margin: 10px; }
+        #juego { display: none; }
+        #salir { background: #e74c3c; color: white; border: none; }
+        @media (min-width: 600px) {
+            #botones button { width: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Piedra, Papel o Tijeras - Multijugador</h1>
+
+    <div id="login">
+        <input type="text" id="username" placeholder="Tu nombre">
+        <button onclick="unirse()">Unirse</button>
+    </div>
+
+    <div id="juego">
+        <p id="mensaje">Esperando al otro jugador...</p>
+        <div id="botones">
+            <button onclick="jugar('piedra')" disabled id="btn-piedra">🪨</button>
+            <button onclick="jugar('papel')" disabled id="btn-papel">📄</button>
+            <button onclick="jugar('tijeras')" disabled id="btn-tijeras">✂️</button>
+        </div>
+        <p id="resultado"></p>
+        <p id="rondas"></p>
+        <p id="puntajes"></p>
+        <button id="salir" onclick="salirSala()">Salir de sala</button>
+    </div>
+
+    <script>
+        const socket = io({ reconnection: true });
+        let usuario = '';
+
+        function unirse() {
+            usuario = document.getElementById('username').value.trim();
+            if (!usuario) {
+                alert('Ingresa tu nombre');
+                return;
+            }
+            socket.emit('unirse', { username: usuario });
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('juego').style.display = 'block';
+        }
+
+        function jugar(jugada) {
+            setBotones(false);
+            document.getElementById('mensaje').textContent = 'Esperando al otro jugador...';
+            socket.emit('jugada', { username: usuario, jugada: jugada });
+        }
+
+        function salirSala() {
+            socket.emit('salir', { username: usuario });
+            usuario = '';
+            setBotones(false);
+            document.getElementById('login').style.display = 'block';
+            document.getElementById('juego').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('mensaje').textContent = '';
+            document.getElementById('resultado').textContent = '';
+            document.getElementById('rondas').textContent = '';
+            document.getElementById('puntajes').textContent = '';
+        }
+
+        function setBotones(activo) {
+            ['btn-piedra', 'btn-papel', 'btn-tijeras'].forEach(id => {
+                document.getElementById(id).disabled = !activo;
+            });
+        }
+
+        socket.on('mensaje', msg => {
+            document.getElementById('mensaje').textContent = msg;
+        });
+
+        socket.on('start', msg => {
+            document.getElementById('mensaje').textContent = msg + ' Elige tu jugada.';
+            document.getElementById('resultado').textContent = '';
+            setBotones(true);
+        });
+
+        socket.on('resultado', data => {
+            document.getElementById('resultado').textContent = data.texto;
+            document.getElementById('rondas').textContent = `Ronda: ${data.rondas}`;
+            document.getElementById('puntajes').textContent = `Puntajes: ${Object.entries(data.puntos).map(([k,v]) => `${k}: ${v}`).join(' | ')}`;
+            setBotones(true);
+        });
+    </script>
+</body>
+</html>
