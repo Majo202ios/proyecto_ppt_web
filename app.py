@@ -110,4 +110,10 @@ def on_salir(data):
     emit('mensaje', f'{username} salió de la sala.', room=room)
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    socketio.run(
+        app,
+        host='0.0.0.0',  # Permite conexiones desde cualquier IP de la red local
+        port=5000,       # Puerto estándar para Flask
+        debug=True,      # Activa modo desarrollo (recarga automática)
+        allow_unsafe_werkzeug=True  # Necesario para algunas versiones recientes
+    )
