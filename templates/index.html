@@ -17,94 +17,274 @@
     rel="stylesheet"
   />
   
+  <!-- Socket.IO Client -->
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-  <script defer src="/static/js/juego.js"></script>
+  
+  <style>
+    /* Estilos personalizados */
+    .choice-btn {
+      transition: all 0.2s;
+      min-width: 100px;
+    }
+    .choice-btn:hover {
+      transform: scale(1.05);
+    }
+    .choice-btn:active {
+      transform: scale(0.95);
+    }
+    #resultado {
+      transition: all 0.3s ease;
+    }
+    .player-badge {
+      font-size: 1.1rem;
+    }
+  </style>
 </head>
 <body class="bg-light d-flex flex-column min-vh-100">
 
   <nav class="navbar navbar-dark bg-primary mb-4">
     <div class="container">
-      <span class="navbar-brand mb-0 h1">Piedra, Papel o Tijeras</span>
+      <span class="navbar-brand mb-0 h1">
+        <i class="bi bi-controller me-2"></i>Piedra, Papel o Tijeras
+      </span>
+      <div id="player-status" class="text-white d-none">
+        <span class="player-badge"><i class="bi bi-person-fill"></i> <span id="current-player"></span></span>
+      </div>
     </div>
   </nav>
 
   <main class="container flex-grow-1">
-    <div id="login" class="text-center">
-      <h2 class="mb-3">Ingresa tu nombre para unirte</h2>
-      <div class="input-group mb-3 justify-content-center" style="max-width: 400px; margin: auto;">
-        <input
-          type="text"
-          id="username"
-          class="form-control"
-          placeholder="Tu nombre"
-          aria-label="Nombre de usuario"
-          aria-describedby="button-unirse"
-        />
-        <button
-          class="btn btn-primary"
-          id="button-unirse"
-          onclick="unirse()"
-          type="button"
-        >
-          <i class="bi bi-box-arrow-in-right"></i> Unirse
-        </button>
+    <!-- Pantalla de inicio/login -->
+    <div id="login" class="text-center py-5">
+      <div class="card mx-auto" style="max-width: 500px;">
+        <div class="card-body">
+          <h2 class="card-title mb-4">Unirse al Juego</h2>
+          <div class="mb-3">
+            <label for="username" class="form-label">Nombre de Jugador</label>
+            <input
+              type="text"
+              id="username"
+              class="form-control form-control-lg"
+              placeholder="Ingresa tu nombre"
+              aria-label="Nombre de usuario"
+              required
+            />
+            <div class="form-text">Máx. 15 caracteres</div>
+          </div>
+          <button
+            class="btn btn-primary btn-lg w-100"
+            id="button-unirse"
+            onclick="unirse()"
+            type="button"
+          >
+            <i class="bi bi-box-arrow-in-right me-2"></i> Unirse
+          </button>
+        </div>
       </div>
     </div>
 
-    <div id="juego" class="d-none text-center">
-      <p id="estado" class="fs-5 fw-semibold"></p>
+    <!-- Pantalla de juego (oculta inicialmente) -->
+    <div id="juego" class="d-none">
+      <div class="row justify-content-center">
+        <div class="col-md-8">
+          <!-- Estado del juego -->
+          <div class="card mb-4">
+            <div class="card-body text-center">
+              <h4 id="estado" class="card-title mb-0"></h4>
+              <div id="opponent-status" class="text-muted mt-2">
+                <i class="bi bi-hourglass-split"></i> Esperando oponente...
+              </div>
+            </div>
+          </div>
 
-      <div class="btn-group mb-3" role="group" aria-label="Opciones de jugada">
-        <button
-          class="btn btn-outline-primary"
-          onclick="enviarJugada('piedra')"
-          title="Piedra"
-          aria-label="Jugar Piedra"
-        >
-          <i class="bi bi-hand-rock-fill" style="font-size: 1.5rem;"></i>
-          <span class="d-none d-md-inline">Piedra</span>
-        </button>
-        <button
-          class="btn btn-outline-success"
-          onclick="enviarJugada('papel')"
-          title="Papel"
-          aria-label="Jugar Papel"
-        >
-          <i class="bi bi-hand-paper-fill" style="font-size: 1.5rem;"></i>
-          <span class="d-none d-md-inline">Papel</span>
-        </button>
-        <button
-          class="btn btn-outline-danger"
-          onclick="enviarJugada('tijeras')"
-          title="Tijeras"
-          aria-label="Jugar Tijeras"
-        >
-          <i class="bi bi-scissors" style="font-size: 1.5rem;"></i>
-          <span class="d-none d-md-inline">Tijeras</span>
-        </button>
-      </div>
+          <!-- Opciones de juego -->
+          <div class="card mb-4">
+            <div class="card-body text-center">
+              <h5 class="card-title mb-3">Elige tu jugada</h5>
+              <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <button
+                  class="choice-btn btn btn-outline-primary btn-lg py-3"
+                  onclick="enviarJugada('piedra')"
+                  title="Piedra"
+                  aria-label="Jugar Piedra"
+                >
+                  <i class="bi bi-hand-rock-fill d-block" style="font-size: 2rem;"></i>
+                  <span>Piedra</span>
+                </button>
+                <button
+                  class="choice-btn btn btn-outline-success btn-lg py-3"
+                  onclick="enviarJugada('papel')"
+                  title="Papel"
+                  aria-label="Jugar Papel"
+                >
+                  <i class="bi bi-hand-paper-fill d-block" style="font-size: 2rem;"></i>
+                  <span>Papel</span>
+                </button>
+                <button
+                  class="choice-btn btn btn-outline-danger btn-lg py-3"
+                  onclick="enviarJugada('tijeras')"
+                  title="Tijeras"
+                  aria-label="Jugar Tijeras"
+                >
+                  <i class="bi bi-scissors d-block" style="font-size: 2rem;"></i>
+                  <span>Tijeras</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
-      <div class="mb-4">
-        <button
-          class="btn btn-outline-secondary"
-          onclick="salir()"
-          aria-label="Salir de la sala"
-        >
-          <i class="bi bi-door-open-fill"></i> Salir de la sala
-        </button>
-      </div>
+          <!-- Resultados y estadísticas -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <div id="resultado" class="text-center py-3">
+                <p class="lead">Esperando jugadas...</p>
+              </div>
+              
+              <div class="row text-center">
+                <div class="col">
+                  <h6>Jugador</h6>
+                  <h4 id="player-score">0</h4>
+                </div>
+                <div class="col">
+                  <h6>Rondas</h6>
+                  <h4 id="round-count">0</h4>
+                </div>
+                <div class="col">
+                  <h6>Oponente</h6>
+                  <h4 id="opponent-score">0</h4>
+                </div>
+              </div>
+            </div>
+          </div>
 
-      <div id="resultado" class="alert alert-info" role="alert" style="min-height: 4rem;">
-        <!-- Aquí se mostrarán resultados -->
+          <!-- Botón de salida -->
+          <div class="text-center">
+            <button
+              class="btn btn-outline-secondary"
+              onclick="salir()"
+              aria-label="Salir de la sala"
+            >
+              <i class="bi bi-door-open-fill me-2"></i> Salir del Juego
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </main>
 
   <footer class="bg-primary text-white text-center py-3 mt-auto">
-    &copy; 2025 Piedra, Papel o Tijeras - Tu Juego Multijugador
+    <div class="container">
+      &copy; 2025 Piedra, Papel o Tijeras - Juego Multijugador en Tiempo Real
+    </div>
   </footer>
 
   <!-- Bootstrap JS Bundle (Popper + Bootstrap) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- JavaScript del Juego -->
+  <script>
+    // Variables globales
+    let socket;
+    let currentPlayer = '';
+    let room = 'sala1';
+    
+    // Conectar al servidor Socket.IO
+    function connectSocket() {
+      socket = io();
+      
+      // Escuchar eventos del servidor
+      socket.on('connect', () => {
+        console.log('Conectado al servidor');
+      });
+      
+      socket.on('mensaje', (msg) => {
+        console.log('Mensaje:', msg);
+        document.getElementById('estado').textContent = msg;
+      });
+      
+      socket.on('start', (msg) => {
+        document.getElementById('estado').textContent = msg;
+        document.getElementById('opponent-status').innerHTML = 
+          '<i class="bi bi-person-check-fill text-success"></i> Oponente conectado!';
+      });
+      
+      socket.on('resultado', (data) => {
+        const resultadoDiv = document.getElementById('resultado');
+        resultadoDiv.innerHTML = `
+          <h4 class="${data.texto.includes('Ganó') ? 'text-success' : data.texto.includes('Empate') ? 'text-warning' : 'text-danger'}">
+            ${data.texto}
+          </h4>
+          <p class="text-muted">Ronda ${data.rondas}</p>
+        `;
+        
+        // Actualizar marcadores
+        document.getElementById('player-score').textContent = data.puntos[currentPlayer];
+        document.getElementById('opponent-score').textContent = 
+          Object.values(data.puntos).find((score, player) => player !== currentPlayer);
+        document.getElementById('round-count').textContent = data.rondas;
+      });
+      
+      socket.on('disconnect', () => {
+        alert('Se perdió la conexión con el servidor');
+        location.reload();
+      });
+    }
+    
+    // Unirse al juego
+    function unirse() {
+      const usernameInput = document.getElementById('username');
+      const username = usernameInput.value.trim();
+      
+      if (!username) {
+        alert('Por favor ingresa un nombre');
+        return;
+      }
+      
+      if (username.length > 15) {
+        alert('El nombre debe tener máximo 15 caracteres');
+        return;
+      }
+      
+      currentPlayer = username;
+      connectSocket();
+      
+      // Enviar evento al servidor
+      socket.emit('unirse', { username, room });
+      
+      // Cambiar a pantalla de juego
+      document.getElementById('login').classList.add('d-none');
+      document.getElementById('juego').classList.remove('d-none');
+      document.getElementById('player-status').classList.remove('d-none');
+      document.getElementById('current-player').textContent = username;
+    }
+    
+    // Enviar jugada
+    function enviarJugada(choice) {
+      if (!socket || !currentPlayer) return;
+      
+      socket.emit('jugada', { 
+        username: currentPlayer,
+        jugada: choice 
+      });
+      
+      document.getElementById('estado').textContent = `Jugaste: ${choice}`;
+    }
+    
+    // Salir del juego
+    function salir() {
+      if (socket && currentPlayer) {
+        socket.emit('salir', { username: currentPlayer });
+        socket.disconnect();
+      }
+      location.reload();
+    }
+    
+    // Manejar recarga/cierre de página
+    window.addEventListener('beforeunload', () => {
+      if (socket && socket.connected && currentPlayer) {
+        socket.emit('salir', { username: currentPlayer });
+      }
+    });
+  </script>
 </body>
 </html>
